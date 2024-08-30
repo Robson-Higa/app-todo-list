@@ -2,6 +2,7 @@ import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'r
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import { AntDesign } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 
 import DateTimePicker  from '@react-native-community/datetimepicker';
 
@@ -11,20 +12,17 @@ const formatarData = (dataISO) => {
   return `${data.getDate().toString().padStart(2, '0')}/${(data.getMonth() + 1).toString().padStart(2, '0')}/${data.getFullYear()}`;
 };
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
-// Função utilizada para criar o BD ao iniciar a aplicação.
-// Caso BD já exista, não será criado novamente, portanto os dados permanecerão
 const iniciarBancoDeDados = async (db) => {
   try {
     await db.execAsync(`
       PRAGMA journal_mode = WAL;
-     -- DROP TABLE tarefa;
+      -- DROP TABLE tarefa;
       CREATE TABLE IF NOT EXISTS tarefa (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT,
         descricao TEXT,
-        data_limite TEXT
+        data_limite TEXT,
+        categoria TEXT
       );
     `)
     console.log('Banco de Dados inicializado')
@@ -41,34 +39,33 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
     nome: '',
     descricao: '',
     data_limite: '',
+    categoria: '',
   });
 
-  // Função para confirmar a exclusão de uma tarefa
   const confirmarExcluir = () => {
     Alert.alert(
       "Atenção!",
       'Deseja excluir a tarefa da lista?',
       [
         { text: 'Não', onPress: () => {}, style: 'cancel' },
-        { text: 'Sim', onPress: () => excluirTarefa(tarefa.id) }, // Passa o ID da tarefa
+        { text: 'Sim', onPress: () => excluirTarefa(tarefa.id) },
       ],
       { cancelable: true }
     );
   }
 
-  // Função para iniciar a edição da tarefa
   const iniciarEdicao = () => {
     setTarefaEditada({
       nome: tarefa.nome,
       descricao: tarefa.descricao,
-      data_limite: tarefa.data_limite,
+      data_limite: tarefa.data_limite || '',
+      categoria: tarefa.categoria || '', 
     });
     setEstaEditando(true);
   };
 
-  // Função para confirmar a edição da tarefa
   const handleEditar = () => {
-    atualizarTarefa(tarefa.id, tarefaEditada.nome, tarefaEditada.descricao, tarefaEditada.data_limite);
+    atualizarTarefa(tarefa.id, tarefaEditada.nome, tarefaEditada.descricao, tarefaEditada.data_limite, tarefaEditada.categoria);
     setEstaEditando(false);
   }
 
@@ -85,7 +82,7 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
               name='edit'
               size={18}
               color='red'
-              onPress={iniciarEdicao} // Inicia a edição
+              onPress={iniciarEdicao}
               style={styles.icon}
             />
             <AntDesign 
@@ -104,6 +101,7 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
         <Text>Nome: {tarefa.nome}</Text>
         <Text>Descrição: {tarefa.descricao}</Text>
         <Text>Data Limite: {formatarData(tarefa.data_limite)}</Text>
+        <Text>Categoria: {tarefa.categoria}</Text>
       </View>
       )}
 
@@ -158,6 +156,17 @@ const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) =
         />
       )}
      
+     <Picker
+        selectedValue={tarefa.categoria}
+        style={styles.picker}
+        onValueChange={(itemValue) => setTarefa({...tarefa, categoria: itemValue})}
+      >
+        <Picker.Item label="Afazeres Domésticos" value="Afazeres Domésticos" />
+        <Picker.Item label="Exercícios" value="Exercícios" />
+        <Picker.Item label="Manutenção" value="Manutenção" />
+        <Picker.Item label="Lazer" value="Lazer" />
+      </Picker>
+
       <Pressable
         onPress={onSave}
         style={styles.saveButton}
@@ -175,10 +184,6 @@ const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) =
   );
 };
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
-// Função principal do aplicativo
-// Primeira função executada ao abrir o aplicativo
 export default App = () => {
   return (
     <SQLiteProvider databaseName='bancoToDo.db' onInit={iniciarBancoDeDados}>
@@ -191,16 +196,12 @@ export default App = () => {
 }
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
-// Componente para mostrar todo o conteúdo do BD
-// Este componente contém toda a parte de manipulação (CRUD) com o BD
 const Conteudo = () => {
   const db = useSQLiteContext();
   const [tarefas, setTarefas] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [tarefa, setTarefa] = useState({ id: 0, nome: '', descricao: ''});
 
-  // função para obter todos os funcion
   const getTarefas = async () => {
     try {
       const allRows = await db.getAllAsync('SELECT * FROM tarefa');
@@ -210,7 +211,6 @@ const Conteudo = () => {
     }
   };
 
-  // CREATE / INSERT
   const confirmarSalvar = () => {
     if (tarefa.nome.length === 0 || tarefa.descricao.length === 0) {
       Alert.alert('Atenção!', 'Por favor, entre com todos os dados!')
@@ -224,17 +224,17 @@ const Conteudo = () => {
 
   const adicionarTarefa = async (novaTarefa) => {
     try {
-      const query = await db.prepareAsync('INSERT INTO tarefa (nome, descricao, data_limite) VALUES (?, ?, ?)');
-      await query.executeAsync([novaTarefa.nome, novaTarefa.descricao, novaTarefa.data_limite]);
+      const query = await db.prepareAsync('INSERT INTO tarefa (nome, descricao, data_limite, categoria) VALUES (?, ?, ?, ?)');
+      await query.executeAsync([novaTarefa.nome, novaTarefa.descricao, novaTarefa.data_limite, novaTarefa.categoria]);
       await getTarefas();
     } catch (error) {
       console.log('Erro ao adicionar tarefa', error);
     }
   };
   
-  const atualizarTarefa = async (tarefaId, novaTarefaNome, novaTarefaDescricao, novaDataLimite) => {
+  const atualizarTarefa = async (tarefaId, novaTarefaNome, novaTarefaDescricao, novaDataLimite, novaCategoria) => {
     try {
-      await db.runAsync('UPDATE tarefa SET nome = ?, descricao = ?, data_limite = ? WHERE id = ?', [novaTarefaNome, novaTarefaDescricao, novaDataLimite, tarefaId]);
+      await db.runAsync('UPDATE tarefa SET nome = ?, descricao = ?, data_limite = ?, categoria = ? WHERE id = ?', [novaTarefaNome, novaTarefaDescricao, novaDataLimite, novaCategoria, tarefaId]);
       Alert.alert('Atenção!', 'Tarefa atualizada com sucesso!');
       await getTarefas(); // Atualiza a lista de tarefas
     } catch (error) {
@@ -242,11 +242,7 @@ const Conteudo = () => {
     }
   };
   
-  
 
-
-  // DELETE
-  // função para confirmar exclusão de todos os usuários
   const confirmarExcluirTodos = () => {
     Alert.alert(
       'Atenção', 
@@ -259,19 +255,8 @@ const Conteudo = () => {
     );
   }
 
-   const confirmarExcluirTarefa = () => {
-    Alert.alert(
-      'Atenção', 
-      'Deseja excluir todos as tarefas', 
-      [
-        { text: 'Não', onPress: () => { }, style: 'cancel' },
-        { text: 'Sim', onPress: excluirTarefa },
-      ],
-      { cancelable: true }
-    );
-  }
   
-  // função para excluir todos os usuários
+  
   const excluirTodasTarefas = async () => {
     try {
       await db.runAsync('DELETE FROM tarefa');
@@ -281,7 +266,6 @@ const Conteudo = () => {
     }
   };
 
-  // função para excluir um usuário
   const excluirTarefa = async (id) => {
     try {
       await db.runAsync('DELETE FROM tarefa WHERE id= ?', [id]);
@@ -291,10 +275,7 @@ const Conteudo = () => {
     }
   }
 
-  // obter todos os usuários ao abrir o aplicativo
   useEffect(() => {
-    // adicionarUsuario({nome: 'Vinicius', email: 'vinicius@email.com', telefone: '1111111'});
-    // excluirTodosUsuarios();
     getTarefas();
   }, []);
 
@@ -336,8 +317,6 @@ const Conteudo = () => {
   );
 }
 
-
-// Todos os estilos de formação estão logo abaixo
 const styles = StyleSheet.create({
   container: {
     flex: 1,
