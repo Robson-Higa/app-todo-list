@@ -3,6 +3,14 @@ import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useState, useEffect } from 'react';
 import { AntDesign } from '@expo/vector-icons';
 
+import DateTimePicker  from '@react-native-community/datetimepicker';
+
+const formatarData = (dataISO) => {
+  if (!dataISO) return 'Sem data limite';
+  const data = new Date(dataISO);
+  return `${data.getDate().toString().padStart(2, '0')}/${(data.getMonth() + 1).toString().padStart(2, '0')}/${data.getFullYear()}`;
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Função utilizada para criar o BD ao iniciar a aplicação.
@@ -11,11 +19,12 @@ const iniciarBancoDeDados = async (db) => {
   try {
     await db.execAsync(`
       PRAGMA journal_mode = WAL;
-      -- DROP TABLE tarefa;
+     -- DROP TABLE tarefa;
       CREATE TABLE IF NOT EXISTS tarefa (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT,
-        descricao TEXT
+        descricao TEXT,
+        data_limite TEXT
       );
     `)
     console.log('Banco de Dados inicializado')
@@ -25,40 +34,43 @@ const iniciarBancoDeDados = async (db) => {
   
 }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
-// Componente Usuario
-// Este componente é utilizado para renderizar os dados do FlatList/BD
-const TarefaBotao = ({tarefa, excluirTarefa, atualizarTarefa}) => {
-
+const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
   const [tarefaSelecionada, setTarefaSelecionada] = useState(null);
   const [estaEditando, setEstaEditando] = useState(false);
   const [tarefaEditada, setTarefaEditada] = useState({
-    tarefa: tarefa.nome,
-    descricao: tarefa.descricao,
+    nome: '',
+    descricao: '',
+    data_limite: '',
   });
 
-
-  // função para confirmar a exclusão de um usuário
+  // Função para confirmar a exclusão de uma tarefa
   const confirmarExcluir = () => {
     Alert.alert(
       "Atenção!",
       'Deseja excluir a tarefa da lista?',
       [
-        { text: 'Não', onPress: () => { }, style: 'cancel' },
-        { text: 'Sim', onPress: () => excluirTarefa(tarefa.id) },
+        { text: 'Não', onPress: () => {}, style: 'cancel' },
+        { text: 'Sim', onPress: () => excluirTarefa(tarefa.id) }, // Passa o ID da tarefa
       ],
       { cancelable: true }
     );
   }
 
+  // Função para iniciar a edição da tarefa
+  const iniciarEdicao = () => {
+    setTarefaEditada({
+      nome: tarefa.nome,
+      descricao: tarefa.descricao,
+      data_limite: tarefa.data_limite,
+    });
+    setEstaEditando(true);
+  };
 
-  // função para confirmar edição
+  // Função para confirmar a edição da tarefa
   const handleEditar = () => {
-    atualizarTarefa(tarefa.id, tarefaEditada.nome, tarefaEditada.descricao);
+    atualizarTarefa(tarefa.id, tarefaEditada.nome, tarefaEditada.descricao, tarefaEditada.data_limite);
     setEstaEditando(false);
   }
-
 
   return (
     <View>
@@ -70,10 +82,10 @@ const TarefaBotao = ({tarefa, excluirTarefa, atualizarTarefa}) => {
         {tarefaSelecionada === tarefa.id && (
           <View style={styles.actions}>
             <AntDesign 
-              tarefa='edit'
+              name='edit'
               size={18}
               color='red'
-              onPress={() => setEstaEditando(true)}
+              onPress={iniciarEdicao} // Inicia a edição
               style={styles.icon}
             />
             <AntDesign 
@@ -83,39 +95,42 @@ const TarefaBotao = ({tarefa, excluirTarefa, atualizarTarefa}) => {
               onPress={confirmarExcluir}
               style={styles.icon}
             />
-
-             <AntDesign 
-              name='delete'
-              size={18}
-              color='red'
-              onPress={handleEditar}
-              style={styles.icon}
-            />
           </View>
         )}
       </Pressable>
 
       {tarefaSelecionada === tarefa.id && !estaEditando && (
-
-      <View style={styles.tarefaConteudo}>
+        <View style={styles.tarefaConteudo}>
         <Text>Nome: {tarefa.nome}</Text>
-        <Text>Descricao: {tarefa.descricao}</Text>
+        <Text>Descrição: {tarefa.descricao}</Text>
+        <Text>Data Limite: {formatarData(tarefa.data_limite)}</Text>
       </View>
       )}
 
       {tarefaSelecionada === tarefa.id && estaEditando && (
-        <TarefaFormulario tarefa={tarefaSelecionada} setTarefa={setTarefaEditada} onSave={handleEditar} setMostrarFormulario={setEstaEditando} />
+        <TarefaFormulario 
+          tarefa={tarefaEditada} 
+          setTarefa={setTarefaEditada} 
+          onSave={handleEditar} 
+          setMostrarFormulario={setEstaEditando} 
+        />
       )}
     </View>
-  )
+  );
 };
 
 
-///////////////////////////////////////////////////////////////////////////////////////////
-// Componente Usuario Formulário
-// Este componente é utilizado para mostrar o formulário que será utilizado para
-// criar ou atualizar um registro no BD
 const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) => {
+  
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowPicker(false);
+    if (selectedDate) {
+      setTarefa({ ...tarefa, data_limite: selectedDate.toISOString().split('T')[0] });
+    }
+  };
+
   return (
     <View>
       <TextInput 
@@ -132,8 +147,17 @@ const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) =
         onChangeText={(text) => setTarefa({...tarefa, descricao: text})}
         autoCapitalize='none'
       />
+        <Pressable onPress={() => setShowPicker(true)} style={styles.input}>
+        <Text>{tarefa.data_limite ? `Data Limite: ${tarefa.data_limite}` : 'Escolher Data Limite'}</Text>
+      </Pressable>
+      {showPicker && (
+        <DateTimePicker
+          mode="date"
+          value={new Date(tarefa.data_limite || new Date())}
+          onChange={handleDateChange}
+        />
+      )}
      
- 
       <Pressable
         onPress={onSave}
         style={styles.saveButton}
@@ -149,7 +173,7 @@ const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) =
       </Pressable>
     </View>
   );
-}
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -198,29 +222,27 @@ const Conteudo = () => {
     }
   }
 
-  // função para adicionar um usuário
   const adicionarTarefa = async (novaTarefa) => {
     try {
-      const query = await db.prepareAsync('INSERT INTO tarefa (nome, descricao) VALUES (?, ?)')
-      await query.executeAsync([novaTarefa.nome, novaTarefa.descricao]);
+      const query = await db.prepareAsync('INSERT INTO tarefa (nome, descricao, data_limite) VALUES (?, ?, ?)');
+      await query.executeAsync([novaTarefa.nome, novaTarefa.descricao, novaTarefa.data_limite]);
       await getTarefas();
     } catch (error) {
-      console.log('Erro ao adicionar tarefa', error)
-    }
-
-  }
-
-  // UPDATE
-  // função para atualizar um usuário
-  const atualizarTarefa = async (tarefaId, novaTarefaNome, novaTarefaDescricao) => {
-    try {
-      a = await db.runAsync('UPDATE tarefa SET nome = ?, descricao= ? WHERE id = ?', [novaTarefaNome, novaTarefaDescricao, tarefaId]);
-      Alert.alert('Atenção!', 'Nova tarefa salva com sucesso!')
-      await getTarefas();
-    } catch (error) {
-      console.log('Erro ao atualizar.', error);
+      console.log('Erro ao adicionar tarefa', error);
     }
   };
+  
+  const atualizarTarefa = async (tarefaId, novaTarefaNome, novaTarefaDescricao, novaDataLimite) => {
+    try {
+      await db.runAsync('UPDATE tarefa SET nome = ?, descricao = ?, data_limite = ? WHERE id = ?', [novaTarefaNome, novaTarefaDescricao, novaDataLimite, tarefaId]);
+      Alert.alert('Atenção!', 'Tarefa atualizada com sucesso!');
+      await getTarefas(); // Atualiza a lista de tarefas
+    } catch (error) {
+      console.log('Erro ao atualizar tarefa: ', error);
+    }
+  };
+  
+  
 
 
   // DELETE
@@ -260,9 +282,9 @@ const Conteudo = () => {
   };
 
   // função para excluir um usuário
-  const excluirTarefa = async (nome) => {
+  const excluirTarefa = async (id) => {
     try {
-      await db.runAsync('DELETE FROM tarefa WHERE nome= ?', ['limpeza']);
+      await db.runAsync('DELETE FROM tarefa WHERE id= ?', [id]);
       await getTarefas();
     } catch (error) {
       console.log('Erro ao excluir: ', error);
@@ -308,13 +330,6 @@ const Conteudo = () => {
             style={styles.icon}
           />
 
-           <AntDesign 
-            name='delete'
-            size={24}
-            color='red'
-            onPress={excluirTarefa}
-            style={styles.icon}
-          />
       </View>
 
     </View>
