@@ -72,7 +72,7 @@ const TarefaBotao = ({tarefa, excluirTarefa, atualizarTarefa}) => {
             <AntDesign 
               tarefa='edit'
               size={18}
-              color='blue'
+              color='red'
               onPress={() => setEstaEditando(true)}
               style={styles.icon}
             />
@@ -81,6 +81,14 @@ const TarefaBotao = ({tarefa, excluirTarefa, atualizarTarefa}) => {
               size={18}
               color='red'
               onPress={confirmarExcluir}
+              style={styles.icon}
+            />
+
+             <AntDesign 
+              name='delete'
+              size={18}
+              color='red'
+              onPress={handleEditar}
               style={styles.icon}
             />
           </View>
@@ -183,7 +191,7 @@ const Conteudo = () => {
     if (tarefa.nome.length === 0 || tarefa.descricao.length === 0) {
       Alert.alert('Atenção!', 'Por favor, entre com todos os dados!')
     } else {
-      Alert.alert('Atenção!', 'Tarefa salvo com sucesso!')
+      Alert.alert('Atenção!', 'Tarefa adicionada com sucesso!')
       adicionarTarefa(tarefa);
       setTarefa({nome: '', descricao: ''});
       setMostrarFormulario(false);
@@ -228,6 +236,18 @@ const Conteudo = () => {
       { cancelable: true }
     );
   }
+
+   const confirmarExcluirTarefa = () => {
+    Alert.alert(
+      'Atenção', 
+      'Deseja excluir todos as tarefas', 
+      [
+        { text: 'Não', onPress: () => { }, style: 'cancel' },
+        { text: 'Sim', onPress: excluirTarefa },
+      ],
+      { cancelable: true }
+    );
+  }
   
   // função para excluir todos os usuários
   const excluirTodasTarefas = async () => {
@@ -240,9 +260,9 @@ const Conteudo = () => {
   };
 
   // função para excluir um usuário
-  const excluirTarefa = async (id) => {
+  const excluirTarefa = async (nome) => {
     try {
-      await db.runAsync('DELETE FROM tarefa WHERE id = ?', [id]);
+      await db.runAsync('DELETE FROM tarefa WHERE nome= ?', ['limpeza']);
       await getTarefas();
     } catch (error) {
       console.log('Erro ao excluir: ', error);
@@ -285,6 +305,14 @@ const Conteudo = () => {
             size={24}
             color='red'
             onPress={confirmarExcluirTodos}
+            style={styles.icon}
+          />
+
+           <AntDesign 
+            name='delete'
+            size={24}
+            color='red'
+            onPress={excluirTarefa}
             style={styles.icon}
           />
       </View>
