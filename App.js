@@ -1,7 +1,7 @@
 import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useState, useEffect } from 'react';
-import { AntDesign } from '@expo/vector-icons';
+import { FontAwesome, AntDesign, Octicons, Entypo } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
 import DateTimePicker  from '@react-native-community/datetimepicker';
@@ -16,7 +16,7 @@ const iniciarBancoDeDados = async (db) => {
   try {
     await db.execAsync(`
       PRAGMA journal_mode = WAL;
-      -- DROP TABLE tarefa;
+     -- DROP TABLE tarefa;
       CREATE TABLE IF NOT EXISTS tarefa (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT,
@@ -56,10 +56,9 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
 
   const iniciarEdicao = () => {
     setTarefaEditada({
-      nome: tarefa.nome,
+      categoria: tarefa.categoria,
       descricao: tarefa.descricao,
       data_limite: tarefa.data_limite || '',
-      categoria: tarefa.categoria || '', 
     });
     setEstaEditando(true);
   };
@@ -75,18 +74,18 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
         style={styles.tarefaBotao}
         onPress={() => setTarefaSelecionada(tarefaSelecionada === tarefa.id ? null : tarefa.id)}
       >
-        <Text style={styles.tarefaTexto}>{tarefa.id} - {tarefa.nome}</Text>
+        <Text style={styles.tarefaTexto}>{tarefa.id} - {tarefa.data_limite}</Text>
         {tarefaSelecionada === tarefa.id && (
           <View style={styles.actions}>
-            <AntDesign 
+            <FontAwesome 
               name='edit'
               size={18}
               color='red'
               onPress={iniciarEdicao}
               style={styles.icon}
             />
-            <AntDesign 
-              name='delete'
+            <Octicons 
+              name='repo-deleted'
               size={18}
               color='red'
               onPress={confirmarExcluir}
@@ -98,10 +97,9 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
 
       {tarefaSelecionada === tarefa.id && !estaEditando && (
         <View style={styles.tarefaConteudo}>
-        <Text>Nome: {tarefa.nome}</Text>
+        <Text>Categoria: {tarefa.categoria}</Text>
         <Text>Descrição: {tarefa.descricao}</Text>
         <Text>Data Limite: {formatarData(tarefa.data_limite)}</Text>
-        <Text>Categoria: {tarefa.categoria}</Text>
       </View>
       )}
 
@@ -131,13 +129,17 @@ const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) =
 
   return (
     <View>
-      <TextInput 
-        style={styles.input}
-        placeholder='Nome'
-        value={tarefa.nome}
-        autoCapitalize='words'
-        onChangeText={(text) => setTarefa({...tarefa, nome: text})}
-      />
+      <Picker
+        selectedValue={tarefa.categoria}
+        style={styles.picker}
+        onValueChange={(itemValue) => setTarefa({...tarefa, categoria: itemValue})}
+      >
+        <Picker.Item label="Afazeres Domésticos" value="Afazeres Domésticos" />
+        <Picker.Item label="Exercícios" value="Exercícios" />
+        <Picker.Item label="Manutenção" value="Manutenção" />
+        <Picker.Item label="Lazer" value="Lazer" />
+      </Picker>
+
       <TextInput 
         style={styles.input}
         placeholder='Descrição'
@@ -156,16 +158,7 @@ const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) =
         />
       )}
      
-     <Picker
-        selectedValue={tarefa.categoria}
-        style={styles.picker}
-        onValueChange={(itemValue) => setTarefa({...tarefa, categoria: itemValue})}
-      >
-        <Picker.Item label="Afazeres Domésticos" value="Afazeres Domésticos" />
-        <Picker.Item label="Exercícios" value="Exercícios" />
-        <Picker.Item label="Manutenção" value="Manutenção" />
-        <Picker.Item label="Lazer" value="Lazer" />
-      </Picker>
+     
 
       <Pressable
         onPress={onSave}
@@ -212,7 +205,7 @@ const Conteudo = () => {
   };
 
   const confirmarSalvar = () => {
-    if (tarefa.nome.length === 0 || tarefa.descricao.length === 0) {
+    if (tarefa.descricao.length === 0) {
       Alert.alert('Atenção!', 'Por favor, entre com todos os dados!')
     } else {
       Alert.alert('Atenção!', 'Tarefa adicionada com sucesso!')
@@ -295,16 +288,16 @@ const Conteudo = () => {
       {mostrarFormulario && (<TarefaFormulario tarefa={tarefa} setTarefa={setTarefa} onSave={confirmarSalvar} setMostrarFormulario={setMostrarFormulario} />)}
 
       <View style={styles.iconsContent}>
-        <AntDesign 
-            name='pluscircleo'
+        <Entypo 
+            name='add-to-list'
             size={24}
             color='blue'
             onPress={() => setMostrarFormulario(true)}
             style={styles.icon}
           />
           
-          <AntDesign 
-            name='delete'
+          <Octicons 
+            name='repo-deleted'
             size={24}
             color='red'
             onPress={confirmarExcluirTodos}
