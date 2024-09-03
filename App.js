@@ -34,17 +34,17 @@ const iniciarBancoDeDados = async (db) => {
 const categoriaIcon = (categoria) => {
   switch (categoria) {
     case 'Nenhuma categoria selecionada.':
-      return <MaterialCommunityIcons name="school" size={30} color="gray" />;
+      return <MaterialCommunityIcons name="school" size={35} color="gray" />;
     case 'Trabalhos Acadêmicos/Tarefas':
-      return <MaterialCommunityIcons name="school" size={30} color="gray" />;
+      return <MaterialCommunityIcons name="school" size={35} color="gray" />;
     case 'Exercícios':
-      return <MaterialCommunityIcons name="dumbbell" size={30} color="gray" />;
+      return <MaterialCommunityIcons name="dumbbell" size={35} color="gray" />;
     case 'Manutenção':
-      return <MaterialCommunityIcons name="wrench" size={30} color="gray" />;
+      return <MaterialCommunityIcons name="wrench" size={35} color="gray" />;
     case 'Lazer':
-      return <MaterialCommunityIcons name="beach" size={30} color="gray" />;
+      return <MaterialCommunityIcons name="beach" size={35} color="gray" />;
     default:
-      return <MaterialCommunityIcons name="help" size={30} color="gray" />;
+      return <MaterialCommunityIcons name="help" size={35} color="gray" />;
   }
 };
 
@@ -86,30 +86,31 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
 
   return (
     <View>
-      <Pressable 
-        style={styles.tarefaBotao}
-        onPress={() => setTarefaSelecionada(tarefaSelecionada === tarefa.id ? null : tarefa.id)}
-      >
-        <Text style={styles.tarefaTexto}>{tarefa.id} - {formatarData(tarefa.data_limite)}</Text>
-        {tarefaSelecionada === tarefa.id && (
-          <View style={styles.actions}>
-            <FontAwesome 
-              name='edit'
-              size={18}
-              color='red'
-              onPress={iniciarEdicao}
-              style={styles.icon}
-            />
-            <Octicons 
-              name='repo-deleted'
-              size={18}
-              color='red'
-              onPress={confirmarExcluir}
-              style={styles.icon}
-            />
+      <Pressable style={styles.tarefaBotao} onPress={() => setTarefaSelecionada(tarefaSelecionada === tarefa.id ? null : tarefa.id)}>
+        <View style={styles.box}>
+          <Text style={styles.tarefaTexto}>{tarefa.id} - {formatarData(tarefa.data_limite)}</Text>
+       
+          {tarefaSelecionada === tarefa.id && (
+            <View style={styles.actions}>
+              <FontAwesome 
+                name='edit'
+                size={18}
+                color='white'
+                onPress={iniciarEdicao}
+                style={styles.icon}
+              />
+              <Octicons 
+                name='repo-deleted'
+                size={18}
+                color='white'
+                onPress={confirmarExcluir}
+                style={styles.icon}
+              />
+            </View>
+          )}
           </View>
-        )}
       </Pressable>
+      
 
       {tarefaSelecionada === tarefa.id && !estaEditando && (
         
@@ -118,9 +119,9 @@ const TarefaBotao = ({ tarefa, excluirTarefa, atualizarTarefa }) => {
             {categoriaIcon(tarefa.categoria)} 
           </View>
           <View style={styles.tarefaIconeTexto}>
-            <Text>Categoria: {tarefa.categoria}</Text>
-            <Text>Descrição: {tarefa.descricao}</Text>
-            <Text>Data Limite: {formatarData(tarefa.data_limite)}</Text>
+            <Text style={styles.textoCard}>Categoria: {tarefa.categoria}</Text>
+            <Text style={styles.textoCard}>Descrição: {tarefa.descricao}</Text>
+            <Text style={styles.textoCard}>Data Limite: {formatarData(tarefa.data_limite)}</Text>
           </View>         
         </View>
       )}
@@ -154,7 +155,7 @@ const TarefaFormulario = ({ tarefa, setTarefa, onSave, setMostrarFormulario }) =
   };
 
   return (
-    <View>
+    <View style={styles.formulario}> 
       <Picker selectedValue={tarefa.categoria} style={styles.picker} onValueChange={handleCategoriaChange}>
         <Picker.Item label="Selecione uma categoria." value= "Nenuma categoria selecionada."/>
         <Picker.Item label="Trabalhos Acadêmicos/Tarefas" value= "Trabalhos Acadêmicos/Tarefas"/>
@@ -204,7 +205,9 @@ export default App = () => {
   return (
     <SQLiteProvider databaseName='bancoToDo.db' onInit={iniciarBancoDeDados}>
       <View style={styles.container}>
-        <Text style={styles.title}>ToDo List</Text>
+        <View style={styles.cabecalho}>
+        <Text style={styles.titulo}>ToDo List</Text>
+        </View>        
         <Conteudo />
       </View>
     </SQLiteProvider>
@@ -216,7 +219,7 @@ const Conteudo = () => {
   const db = useSQLiteContext();
   const [tarefas, setTarefas] = useState([]);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [tarefa, setTarefa] = useState({ id: 0, nome: '', descricao: ''});
+  const [tarefa, setTarefa] = useState({ id: 0, nome: '', descricao: '', categoria: '', data_limite:''});
 
   const getTarefas = async () => {
     try {
@@ -233,7 +236,7 @@ const Conteudo = () => {
     } else {
       Alert.alert('Atenção!', 'Tarefa adicionada com sucesso!')
       adicionarTarefa(tarefa);
-      setTarefa({nome: '', descricao: ''});
+      setTarefa({categoria: '', descricao: '', data_limite: '' });
       setMostrarFormulario(false);
     }
   }
@@ -299,7 +302,7 @@ const Conteudo = () => {
   return (
     <View style={styles.contentContainer}>
       {tarefas.length === 0 ? (
-        <Text>Não existem tarefas</Text>
+        <Text style={styles.textoInicio}>Não existem tarefas adicionadas</Text>
       ) : (
         <FlatList 
           data={tarefas}
@@ -310,11 +313,11 @@ const Conteudo = () => {
 
       {mostrarFormulario && (<TarefaFormulario tarefa={tarefa} setTarefa={setTarefa} onSave={confirmarSalvar} setMostrarFormulario={setMostrarFormulario} />)}
 
-      <View style={styles.iconsContent}>
-        <Entypo 
+        <View style={styles.iconsContent}>
+          <Entypo 
             name='add-to-list'
             size={24}
-            color='blue'
+            color='white'
             onPress={() => setMostrarFormulario(true)}
             style={styles.icon}
           />
@@ -322,12 +325,11 @@ const Conteudo = () => {
           <Octicons 
             name='repo-deleted'
             size={24}
-            color='red'
+            color='white'
             onPress={confirmarExcluirTodos}
             style={styles.icon}
           />
-
-      </View>
+        </View>
 
     </View>
   );
@@ -336,14 +338,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 15,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1f1e',
+    marginTop: 20,    
+    justifyContent: 'flex-start'
   },
-  title: {
+
+  box:{
+    height: 40,
+    width: '100%',
+    borderColor: '#93ccc6',
+    borderWidth: 1,
+    padding: 7,
+    marginTop: 7,
+    borderRadius: 10,
+  },
+
+  cabecalho: {
+    width: '100%',
+    height: 100,
+    justifyContent: 'center',
+  },
+
+  titulo: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 5,
     textAlign: 'center',
+    color: 'white'
   },
+
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -355,38 +378,47 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
   },
+
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
   },
+
   tarefaBotao: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   tarefaTexto: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginLeft: 15,
+    // marginTop: 15,
     flex: 1,
+    color: 'white',
   },
+
   actions: {
     flexDirection: 'row',
+    justifyContent: 'center'
   },
+
   icon: {
     marginLeft: 10,
   },
+
   tarefaConteudo: {
     marginTop: 10,
     fontSize: 16,
     justifyContent: 'space-between',
     flexDirection: 'row',
-    alignItems: ""
+  
   },
 
   tarefaIconeCard:{
-    backgroundColor: '#c2e4cb',
+    backgroundColor: 'white',
     borderRadius: 5,
     marginBottom: 15,
     width: 51,
@@ -406,12 +438,24 @@ const styles = StyleSheet.create({
 
   tarefaIconeTexto: {
     width: 275,
+    backgroundColor: 'white',
     borderColor: '#176585',
-    justifyContent: 'center',
+    // justifyContent: 'space-between',
     borderWidth: 1, 
     shadowColor: '#000',
     padding: 5,
     borderRadius: 5,
+  },
+ 
+  textoInicio: {
+    color: 'white',
+    fontSize: 15,
+    textAlign: 'center',
+  },
+
+  textoCard: {
+    color: 'black',
+    fontWeight: 'bold'
   },
 
   formulario: {
@@ -425,23 +469,27 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
   },
+
   picker: {
     height: 50,
     width: '100%',
     marginBottom: 10,
   },
+
   input: {
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     marginBottom: 10,
     padding: 10,
   },
+
   datePickerButton: {
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     padding: 10,
     marginBottom: 10,
   },
+  
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
