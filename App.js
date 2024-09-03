@@ -533,10 +533,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 20,
   },
-  noTasksText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 18,
-    color: '#555',
-  },
+ 
 });
