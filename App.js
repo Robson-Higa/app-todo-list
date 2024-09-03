@@ -1,7 +1,7 @@
 import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 import { useState, useEffect } from 'react';
-import { FontAwesome, Octicons, Entypo, MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome, Octicons, Entypo, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 
 import DateTimePicker  from '@react-native-community/datetimepicker';
@@ -206,7 +206,7 @@ export default App = () => {
     <SQLiteProvider databaseName='bancoToDo.db' onInit={iniciarBancoDeDados}>
       <View style={styles.container}>
         <View style={styles.cabecalho}>
-        <Text style={styles.titulo}>ToDo List</Text>
+        <Text style={styles.titulo}>App ToDo List</Text>
         </View>        
         <Conteudo />
       </View>
@@ -301,15 +301,19 @@ const Conteudo = () => {
 
   return (
     <View style={styles.contentContainer}>
-      {tarefas.length === 0 ? (
-        <Text style={styles.textoInicio}>Não existem tarefas adicionadas</Text>
+        {tarefas.length === 0 ? (      
+          <View style={styles.inicioIcon}>
+          <FontAwesome5 name='gamepad' size={35} color='white'/>
+          <Text style={styles.textoInicio}>Não existem tarefas adicionadas</Text>
+        </View>
+      
       ) : (
         <FlatList 
           data={tarefas}
           renderItem={({item}) => (<TarefaBotao tarefa={item} excluirTarefa={excluirTarefa} atualizarTarefa={atualizarTarefa} />)}
           keyExtractor={(item) => item.id.toString()}
         />
-      )}
+      )}      
 
       {mostrarFormulario && (<TarefaFormulario tarefa={tarefa} setTarefa={setTarefa} onSave={confirmarSalvar} setMostrarFormulario={setMostrarFormulario} />)}
 
@@ -379,6 +383,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
+  inicioIcon: {
+    alignItems: 'center',
+    flexDirection: 'column'
+  },
+
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -419,10 +428,9 @@ const styles = StyleSheet.create({
 
   tarefaIconeCard:{
     backgroundColor: 'white',
-    borderRadius: 5,
-    marginBottom: 15,
-    width: 51,
-    height: 51,
+    borderTopStartRadius: 10,
+    borderBottomLeftRadius: 10,
+    width: 51,   
     padding: 10,
     borderColor: '#176585',
     alignItems: 'center',
@@ -444,13 +452,14 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     shadowColor: '#000',
     padding: 5,
-    borderRadius: 5,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
   },
  
   textoInicio: {
     color: 'white',
     fontSize: 15,
-    textAlign: 'center',
+    // textAlign: 'center',
   },
 
   textoCard: {
